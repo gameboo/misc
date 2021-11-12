@@ -15,7 +15,9 @@ toc::[]
 
 Prepare an sdcard with a fat partition and a bsd rootfs partition
 For example, using cheribuild
-`../cheribuild/cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64`.
+```sh
+../cheribuild/cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64
+```
 
 You can put files to add to the final bsd rootfs in `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/*`
 specifically, add a `.dtbo` describing the uart and the `/boot/loader.conf.local` to
@@ -30,11 +32,12 @@ point to it.
 - the bsd kernel to boot
 
 === Embed a bootloader and get an hps and a core slice from a bitfile
-```
-$ BOOTLOADER=<DE10Pro-hps-ubuntu-sdcard path>/u-boot-socfpga/spl/u-boot-spl-dtb.ihex
-$ SOF=DE10Pro.sof
-$ quartus_cpf --bootloader=$BOOTLOADER $SOF socfpga.sof
-$ quartus_cpf -c --hps -o bitstream_compression=on socfpga.sof socfpga.rbf
+
+```sh
+BOOTLOADER=<DE10Pro-hps-ubuntu-sdcard path>/u-boot-socfpga/spl/u-boot-spl-dtb.ihex
+SOF=DE10Pro.sof
+quartus_cpf --bootloader=$BOOTLOADER $SOF socfpga.sof
+quartus_cpf -c --hps -o bitstream_compression=on socfpga.sof socfpga.rbf
 ```
 
 == FreeBSD rootfs partition
@@ -47,7 +50,7 @@ $ quartus_cpf -c --hps -o bitstream_compression=on socfpga.sof socfpga.rbf
     `fdt_overlays="/boot/fpga-ns16550.dtbo"`
 - possibly your ssh keys to help ssh-ing into the arm
 - optionally, in `/etc/rc.conf` add
-```
+```sh
 ifconfig_<interface name, a.k.a. dwc0>="inet a.b.c.d/24"
 defaultrouter="a.b.c.1"
 ```
@@ -60,33 +63,40 @@ defaultrouter="a.b.c.1"
 = Prepare the RISCV softcore system
 
 == Push the hps slice to the board and get a usb terminal going
+
 From the host machine driving the de10pro board:
-```
+
+```sh
 $ RBF=<quartus project path>/output_files/socfpga.hps.rbf
 $ quartus_pgm -m jtag -o P\;$RBF@2 && picocom -b 115200 /dev/ttyUSB0
 ```
 
 == Push the core slice programmed from the sdcard and setup the AXI bridges
+
 From the u-boot prompt on the ARM HPS system:
-```
+
+```uboot
 fatload mmc 0:1 1000 <path to socfpga.core.rbf in sdcard mount partition>
 fpga load 0 1000 ${filesize}
 bridge enable
 ```
 
 === side note - other useful u-boot commands:
-```
+
+```uboot
 printenv
 usb start
 usb info
 fatload usb ...
 ```
+
 = Boot FreeBSD on the ARM HPS system
 
 == Get to the BSD loader
 
 From the u-boot prompt on the ARM HPS system:
-```
+
+```uboot
 fatload mmc 0:1 0x2000000 <path to loader.efi in sdcard mount partition>
 fatload mmc 0:1 0x8000000 <path to socfpga_stratix10_de10_pro2.dtb in sdcard mount partition>
 bootefi 0x2000000 0x8000000
@@ -95,7 +105,8 @@ bootefi 0x2000000 0x8000000
 == Actually boot FreeBSD
 
 From the FreeBSD loader prompt:
-```
+
+```bsdloader
 load <disk0s1>:</path/to/kernel>
 set currdev=<disk0s2:>
 include </boot/lua/loader.lua>
@@ -103,14 +114,17 @@ boot
 ```
 
 === side note - other useful FreeBSD loader commands:
+
 Misc:
-```
+
+```bsdloader
 show
 fdt ls
 ```
 
 To specify the usb drive as the rootfs on freebsd boot:
-```
+
+```sh
 ufs:diskid/DISK-20090815198100000s2a
 ```
 
@@ -119,6 +133,7 @@ ufs:diskid/DISK-20090815198100000s2a
 == Get a RISCV softcore GDB session
 
 Once FreeBSD is booted on the ARM core, we first want to get a gdb session going.
+
 - Run riscv gdb stub on the ARM
 - Connect a riscv gdb session to the running riscv gdb stub session. This should be done from a machine which has access to:
   * a bbl bootloader
@@ -128,6 +143,7 @@ Once FreeBSD is booted on the ARM core, we first want to get a gdb session going
 == Boot the RISCV softcore system
 
 From the gdb session:
+
 - load the device tree in the softcore's subsystem (the one generated from `git@github.com:gameboo/DE10Pro-softcore-devicetree.git` will load at 0x80000000)
 - load the FreeBSD kernel
 - load the bbl bootloader
