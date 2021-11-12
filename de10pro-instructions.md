@@ -1,18 +1,17 @@
 Prepare an sdcard with a fat partition and a bsd rootfs partition
 For example, using cheribuild
+`../cheribuild/cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64`.
 
-../cheribuild/cheribuild.py --source-root=/home/gameboo/devstuff/cheri --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64
-
-You can put files to add to the final bsd rootfs in /home/gameboo/devstuff/cheri
-specifically, add a dtbo describing the uart and the /boot/loader.conf.local to
-point to it
+You can put files to add to the final bsd rootfs in `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff>/cheri/extra-files/*`
+specifically, add a `.dtbo` describing the uart and the `/boot/loader.conf.local` to
+point to it.
 
 In the Fat partition, you want:
 
 - a u-boot binary
 - the `*.core.rbf` to use for the fpga configuration
-- the dtb
-- the efi bsd loader
+- the `*.dtb` for the ARM HPS system
+- the `*.efi` bsd loader
 - the bsd kernel to boot
 
 In the bsd rootfs partition, you want:
@@ -90,3 +89,20 @@ ufs:diskid/DISK-20090815198100000s2a
 in `/etc/rc.conf` add
  - ifconfig_<ifc aka dwc0>="inet a.b.c.d/24"
  - defaultrouter="a.b.c.1"
+
+Once FreeBSD is booted on the ARM core, to get a prompt on the RISCV core, we first want to get a gdb session going.
+- Run riscv gdb stub on the ARM
+- Connect a riscv gdb session to the running riscv gdb stub session. This should be done from a machine which has access to:
+  * a bbl bootloader
+  * a riscv FreeBSD kernel
+  * a device tree for the riscv fpga softcore system (see `git@github.com:gameboo/DE10Pro-softcore-devicetree.git`)
+
+Then, from the gdb session:
+- load the device tree in the softcore's subsystem (the one generated from `git@github.com:gameboo/DE10Pro-softcore-devicetree.git` will load at 0x80000000)
+- load the FreeBSD kernel
+- load the bbl bootloader
+- set $a0 = 0
+- set $a1 = <device tree load address> (0x80000000)
+- set the riscv core running (`continue`)
+
+From an ARM FreeBSD prompt, connect to the uart using `cu -l /dev/ttyu0` (this `/dev/ttyu0` device should have been detected by virtue of having booted the ARM FreeBSD kernel with the previously mentioned device tree overlay).
