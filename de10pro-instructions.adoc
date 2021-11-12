@@ -1,4 +1,17 @@
-# Prepare the sd card
+:toc: macro
+:toclevels: 4
+:toc-title:
+:toc-placement!:
+:source-highlighter:
+
+[discrete]
+= Contents
+
+toc::[]
+
+:sectnums:
+
+= Prepare the sd card
 
 Prepare an sdcard with a fat partition and a bsd rootfs partition
 For example, using cheribuild
@@ -8,7 +21,7 @@ You can put files to add to the final bsd rootfs in `<path to your cheri build s
 specifically, add a `.dtbo` describing the uart and the `/boot/loader.conf.local` to
 point to it.
 
-## Fat partition
+== Fat partition
 
 - a u-boot binary
 - the `*.core.rbf` to use for the fpga configuration
@@ -16,7 +29,7 @@ point to it.
 - the `*.efi` bsd loader
 - the bsd kernel to boot
 
-### Embed a bootloader and get an hps and a core slice from a bitfile
+=== Embed a bootloader and get an hps and a core slice from a bitfile
 ```
 $ BOOTLOADER=<DE10Pro-hps-ubuntu-sdcard path>/u-boot-socfpga/spl/u-boot-spl-dtb.ihex
 $ SOF=DE10Pro.sof
@@ -24,7 +37,7 @@ $ quartus_cpf --bootloader=$BOOTLOADER $SOF socfpga.sof
 $ quartus_cpf -c --hps -o bitstream_compression=on socfpga.sof socfpga.rbf
 ```
 
-## FreeBSD rootfs partition
+== FreeBSD rootfs partition
 
 - a bsd rootfs ;)
 - loader script to include `/boot/lua/loader.lua`
@@ -44,16 +57,16 @@ defaultrouter="a.b.c.1"
   fmem devices from the command line
 - git / vim / gcc / whatever tools...
 
-# Prepare the RISCV softcore system
+= Prepare the RISCV softcore system
 
-## Push the hps slice to the board and get a usb terminal going
+== Push the hps slice to the board and get a usb terminal going
 From the host machine driving the de10pro board:
 ```
 $ RBF=<quartus project path>/output_files/socfpga.hps.rbf
 $ quartus_pgm -m jtag -o P\;$RBF@2 && picocom -b 115200 /dev/ttyUSB0
 ```
 
-## Push the core slice programmed from the sdcard and setup the AXI bridges
+== Push the core slice programmed from the sdcard and setup the AXI bridges
 From the u-boot prompt on the ARM HPS system:
 ```
 fatload mmc 0:1 1000 <path to socfpga.core.rbf in sdcard mount partition>
@@ -61,16 +74,16 @@ fpga load 0 1000 ${filesize}
 bridge enable
 ```
 
-### side note - other useful u-boot commands:
+=== side note - other useful u-boot commands:
 ```
 printenv
 usb start
 usb info
 fatload usb ...
 ```
-# Boot FreeBSD on the ARM HPS system
+= Boot FreeBSD on the ARM HPS system
 
-## Get to the BSD loader
+== Get to the BSD loader
 
 From the u-boot prompt on the ARM HPS system:
 ```
@@ -79,7 +92,7 @@ fatload mmc 0:1 0x8000000 <path to socfpga_stratix10_de10_pro2.dtb in sdcard mou
 bootefi 0x2000000 0x8000000
 ```
 
-## Actually boot FreeBSD
+== Actually boot FreeBSD
 
 From the FreeBSD loader prompt:
 ```
@@ -89,7 +102,7 @@ include </boot/lua/loader.lua>
 boot
 ```
 
-### side note - other useful FreeBSD loader commands:
+=== side note - other useful FreeBSD loader commands:
 Misc:
 ```
 show
@@ -101,9 +114,9 @@ To specify the usb drive as the rootfs on freebsd boot:
 ufs:diskid/DISK-20090815198100000s2a
 ```
 
-# Get a FreeBSD prompt on the RISCV softcore system
+= Get a FreeBSD prompt on the RISCV softcore system
 
-## Get a RISCV softcore GDB session
+== Get a RISCV softcore GDB session
 
 Once FreeBSD is booted on the ARM core, we first want to get a gdb session going.
 - Run riscv gdb stub on the ARM
@@ -112,7 +125,7 @@ Once FreeBSD is booted on the ARM core, we first want to get a gdb session going
   * a riscv FreeBSD kernel
   * a device tree for the riscv fpga softcore system (see `git@github.com:gameboo/DE10Pro-softcore-devicetree.git`)
 
-## Boot the RISCV softcore system
+== Boot the RISCV softcore system
 
 From the gdb session:
 - load the device tree in the softcore's subsystem (the one generated from `git@github.com:gameboo/DE10Pro-softcore-devicetree.git` will load at 0x80000000)
@@ -122,6 +135,6 @@ From the gdb session:
 - set $a1 = <device tree load address> (0x80000000)
 - set the riscv core running (`continue`)
 
-## Connect a prompt to the RISCV softcore system UART
- 
+== Connect a prompt to the RISCV softcore system UART
+
 From an ARM FreeBSD prompt, connect to the uart using `cu -l /dev/ttyu0` (this `/dev/ttyu0` device should have been detected by virtue of having booted the ARM FreeBSD kernel with the previously mentioned device tree overlay).
