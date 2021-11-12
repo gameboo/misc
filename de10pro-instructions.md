@@ -2,7 +2,7 @@ Prepare an sdcard with a fat partition and a bsd rootfs partition
 For example, using cheribuild
 `../cheribuild/cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64`.
 
-You can put files to add to the final bsd rootfs in `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff>/cheri/extra-files/*`
+You can put files to add to the final bsd rootfs in `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/*`
 specifically, add a `.dtbo` describing the uart and the `/boot/loader.conf.local` to
 point to it.
 
