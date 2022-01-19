@@ -53,6 +53,8 @@ SOF=<path to your stratix 10 *.sof file>
 OUTNAME=socfpga
 quartus_cpf --bootloader=$BOOTLOADER $SOF $OUTNAME.sof
 quartus_cpf -c --hps -o bitstream_compression=on $OUTNAME.sof $OUTNAME.rbf
+# or possibly:
+# quartus_pfg -c $SOF -o hps=ON -o hps_path=$BOOTLOADER $OUTNAME.rbf
 ```
 
 == FreeBSD rootfs partition
