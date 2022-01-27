@@ -4,6 +4,29 @@
 :toc-placement!:
 :source-highlighter:
 
+= TL;DR
+
+Assuming all tools are installed and the disk images and filenames match, run the following commands to prepare the RISCV FPGA image and bring up FreeBSD on the DE10Pro's ARM HPS system:
+
+```sh
+# host machine
+quartus_pgm -m jtag -o P\;cheri-bgas-socfpga-25012022-12_02.hps.rbf@2 && picocom -b 115200 /dev/ttyUSB0
+# DE10Pro's ARM HPS ...
+# u-boot
+fatload mmc 0:1 1000 cheri-bgas-socfpga-25012022-12_02.core.rbf
+fpga load 0 1000 ${filesize}
+bridge enable
+fatload mmc 0:1 0x2000000 efi/boot/bootaa64.efi
+fatload mmc 0:1 0x8000000 socfpga_stratix10_de10_pro2.dtb
+bootefi 0x2000000 0x8000000
+# FreeBSD loader
+load disk0s1:de10-kernel-fmem
+set currdev=disk0s2:
+include /boot/lua/loader.lua
+# FreeBSD prompt...
+```
+Read on for more details.
+
 [discrete]
 = Contents
 
