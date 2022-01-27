@@ -76,6 +76,12 @@ On the FreeBSD rootfs, we need:
 ifconfig_<interface name, a.k.a. dwc0>="inet <ip for the ARM HPS system, e.g. 192.168.10.10/24>"
 defaultrouter="<ip of a host machine to act as a router, e.g. 192.168.10.1>"
 ```
+- optionally, in `/etc/resolv.conf` add
+```sh
+nameserver 8.8.8.8
+nameserver 208.67.222.222
+nameserver 208.67.220.220
+```
 - a clone of https://github.com/bukinr/RISCV_gdbstub.git to enable gdb sessions
   to the RISCV FPGA soft-core
 - a clone of https://github.com/CTSRD-CHERI/fmem.git to interact with the
