@@ -6,9 +6,9 @@
 
 = TL;DR
 
-_Assuming all tools are installed, disk images and filenames match, etc... read the detailed sections for more details_
+_Assuming all tools are installed, disk images and filenames match, etc... read the later sections for more details_
 
-Run the following commands to prepare the RISCV FPGA image and bring up FreeBSD on the DE10Pro's ARM HPS system:
+=== Prepare the RISCV FPGA soft-core and bring up FreeBSD on the DE10Pro's ARM HPS system
 
 ```sh
 # host machine
@@ -28,9 +28,9 @@ include /boot/lua/loader.lua
 # FreeBSD prompt...
 ```
 
-Run the following commands to boot FreeBSD on the RISCV soft-core:
+=== Boot FreeBSD on the RISCV soft-core
 
-- first terminal: RISCV gdb stub
+==== first terminal: RISCV gdb stub
 ```sh
 # ARM HPS FreeBSD prompt
 setenv RISCV_GDB_STUB_FMEM_DEV /dev/fmem_sys0_debug_unit
@@ -38,7 +38,7 @@ setenv RISCV_GDB_STUB_PORT 81
 RISCV_gdbstub/src/main
 ```
 
-- second terminal: run `cu` to connect to the RISCV soft-core uart
+==== second terminal: run `cu` to connect to the RISCV soft-core uart
 ```sh
 # ARM HPS FreeBSD prompt
 cu -l /dev/ttyu0
@@ -48,7 +48,7 @@ cu -l /dev/ttyu0
 
 ```
 
-- third terminal: gdb session to drive the RISCV soft-core
+==== third terminal: gdb session to drive the RISCV soft-core
 ```gdb
 # ARM HPS FreeBSD prompt
 cd /root/riscv-freebsd-boot
