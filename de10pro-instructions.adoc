@@ -6,7 +6,9 @@
 
 = TL;DR
 
-_Assuming all tools are installed, disk images and filenames match, etc... read the later sections for more details_
+_To boot the CHERI-BGAS system, run the following commands assuming all tools are installed, disk images and filenames match, etc..._
+
+_Read the later sections for more details_
 
 === Prepare the RISCV FPGA soft-core and bring up FreeBSD on the DE10Pro's ARM HPS system
 
