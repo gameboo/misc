@@ -92,34 +92,42 @@ overlay describing the FPGA hardware exposed to the HPS ARM system (RISCV debug 
 and a `/boot/loader.conf.local` configuration file to point to it, to enable the FreeBSD running on the ARM
 HPS to interface with this hardware.
 
-== Fat partition
+Once the cheribuild command is done, a `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img` disk image should be available. This image can be flashed onto an SD card by running (most likely as `root` for access to the SD card device):
+```sh
+dd if=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img of=<<path to your SD card device, a.k.a. /dev/sdX> bs=4M
+```
 
-- a u-boot binary
-- the `*.core.rbf` to use for the fpga configuration
-- the `*.dtb` for the ARM HPS system
+You can then mount the FAT partition from the SD card and copy files to it easily.
+
+== FAT partition
+
+For the following steps, the FAT partition on the SD card should contain:
+
+- the `*.core.rbf` FPGA image to use for the FPGA configuration
+- a u-boot binary image `u-boot.img`
+- the `*.dtb` device tree binary used by the ARM HPS system
 - the `*.efi` bsd loader
 - the (fmem-enabled, with this driver:
   https://github.com/CTSRD-CHERI/freebsd-morello/blob/stratix10/sys/arm64/intel/fmem.c)
   FreeBSD kernel to boot
 
-=== Embed a bootloader and get an hps and a core slice from a bitfile
+=== Build and embed a u-boot bootloader, and get an hps and a core slice from a bitfile
 
 (TODO, find another source for u-boot...updt: use https://raw.githubusercontent.com/POETSII/DE10Pro-hps-ubuntu-sdcard-scripts/0f671c7726ab2b65011ed5632b7eb2d96cef9c80/build_uboot.sh)
 
-You can build u-boot following the instructions at
-https://github.com/POETSII/DE10Pro-getting-started.git (which uses
-https://github.com/POETSII/DE10Pro-hps-ubuntu-sdcard.git).
-You can then embed the u-boot binary in your startix 10 `\*.sof` file and split
-it into a `*.hps.rbf` and a `*.core.rbf` with the following commands:
+You can build u-boot by running https://raw.githubusercontent.com/POETSII/DE10Pro-hps-ubuntu-sdcard-scripts/0f671c7726ab2b65011ed5632b7eb2d96cef9c80/build_uboot.sh[this] script.
+Once the script is finished, relative to where it was ran, there should exist both a
+`./u-boot-socfpga/u-boot.img` u-boot image and a
+`./u-boot-socfpga/spl/u-boot-spl-dtb.ihex` first stage memory image.
 
+`./u-boot-socfpga/u-boot.img` should be copied to th FAT partition on the SD card.
+The first stage memory image `./u-boot-socfpga/spl/u-boot-spl-dtb.ihex` should be embedded in the startix 10 FPGA configuration.
+### TODO: this assumes a built DE10Pro-cheri-bgas sof file. Add explanations...###
 ```sh
-BOOTLOADER=<path to DE10Pro-hps-ubuntu-sdcard>/u-boot-socfpga/spl/u-boot-spl-dtb.ihex
+BOOTLOADER=<path to u-boot-socfpga>/spl/u-boot-spl-dtb.ihex
 SOF=<path to your stratix 10 *.sof file>
 OUTNAME=socfpga
-quartus_cpf --bootloader=$BOOTLOADER $SOF $OUTNAME.sof
-quartus_cpf -c --hps -o bitstream_compression=on $OUTNAME.sof $OUTNAME.rbf
-# or possibly:
-# quartus_pfg -c $SOF -o hps=ON -o hps_path=$BOOTLOADER $OUTNAME.rbf
+quartus_pfg -c $SOF -o hps=ON -o hps_path=$BOOTLOADER $OUTNAME.rbf
 ```
 
 == FreeBSD rootfs partition
