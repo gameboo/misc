@@ -71,21 +71,24 @@ toc::[]
 
 :sectnums:
 
-= Prepare the sd card
+= Prepare the SD card
 
-Prepare an sdcard with a FAT partition and a FreeBSD rootfs partition to be
-used by the FreeBSD instance that will run on the ARM HPS system.
+The first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup
+is to prepare an  SD card with a FAT partition for boot, and a FreeBSD rootfs
+partition to be used by the FreeBSD instance that will run on the ARM HPS system.
 
-For example, using cheribuild (https://github.com/CTSRD-CHERI/cheribuild.git),
-you can run:
+One can do so using https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild]
+by running:
 ```sh
 ./cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64
 ```
 
 Extra files can be added to the final FreeBSD rootfs by placing them in
-`<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/*`
-prior to running the command.  Here, we will want to add a `*.dtbo` device tree
-overlay describing the uart and a `/boot/loader.conf.local` to point to it.
+`<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/\*`
+**prior to running the command**. Here, we will want to add a `*.dtbo` device tree
+overlay describing the FPGA hardware exposed to the HPS ARM system (RISCV debug unit, uart, interrupts...)
+and a `/boot/loader.conf.local` configuration file to point to it, to enable the FreeBSD running on the ARM
+HPS to interface with this hardware.
 
 == Fat partition
 
