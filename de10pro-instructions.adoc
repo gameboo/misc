@@ -101,7 +101,7 @@ You can then mount the FAT partition from the SD card and copy files to it easil
 
 == FAT partition
 
-For the following steps, the FAT partition on the SD card should contain:
+To enable later steps, the FAT partition on the SD card should contain:
 
 - the `*.core.rbf` FPGA image to use for the FPGA configuration
 - a u-boot binary image `u-boot.img`
