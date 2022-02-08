@@ -102,7 +102,7 @@ HPS to interface with this hardware.
 
 === Embed a bootloader and get an hps and a core slice from a bitfile
 
-(TODO, find another source for u-boot...)
+(TODO, find another source for u-boot...updt: use https://raw.githubusercontent.com/POETSII/DE10Pro-hps-ubuntu-sdcard-scripts/0f671c7726ab2b65011ed5632b7eb2d96cef9c80/build_uboot.sh)
 
 You can build u-boot following the instructions at
 https://github.com/POETSII/DE10Pro-getting-started.git (which uses
