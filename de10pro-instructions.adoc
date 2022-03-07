@@ -99,18 +99,6 @@ toc::[]
 On a DE10Pro CHERI-BGAS system, we want a FreeBSD kernel to run on the ARM HPS system, and a CheriBSD kernel for the RISCV FPGA soft-core. As a first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup, we prepare a disk image to put on an SD card.
 We will use https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild] to prepare our environment. Start by cloning cheribuild so you can build the various kernels and disk images to create our setup.
 
-== Preparing the relevant device trees
-
-=== Dervice tree for the ARM HPS 
-
-#TODO#
-
-=== Device tree overlay exposing the soft-core system to the ARM HPS
-
-To allow the ARM HPS system to communicate with the RISCV soft-core on the FPGA, we need to expose the various RISCV debug unit, uart, interrupts... to HPS. To do this, we build a device tree overlay as follows:
-
-#TODO#
-
 == Preparing the RISCV environment
 
 _(At the time of writing)_ Booting CheriBSD on our RISCV soft-core requires:
@@ -137,6 +125,19 @@ https://github.com/gameboo/DE10Pro-softcore-devicetree.git
 == Preparing the ARM HPS environment
 
 _(At the time of writing)_ We want to boot a FreeBSD "host" setup on the ARM HPS system that will drive the RISCV soft-core. On this ARM host system, we will want to have all the necessary files to simply boot FreeBSD correctly, and the necessary tools to properly interact with the soft-core system. Here, we first go through files to be embedded in the final rootfs, and we then use cheribuild to create both the ARM FreeBSD kernel and the disk image with the files of interest.
+
+=== Preparing the relevant device trees
+
+==== Dervice tree for the ARM HPS 
+
+#TODO#
+
+==== Device tree overlay exposing the soft-core system to the ARM HPS
+
+To allow the ARM HPS system to communicate with the RISCV soft-core on the FPGA, we need to expose the various RISCV debug unit, uart, interrupts... to HPS. To do this, we build a device tree overlay as follows:
+
+#TODO#
+
 
 === Preparing relevant files for the FreeBSD rootfs
 
