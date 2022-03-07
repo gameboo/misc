@@ -4,12 +4,21 @@
 :toc-placement!:
 :source-highlighter:
 
+This document describes the workflow for the CHERI-BGAS project.
+
+
+
+// -----------------------------------------------------------------------------
+
+
+
+[discrete]
 = TL;DR
 
 _Run the following commands to boot a CHERI-BGAS system (assuming all tools are installed, disk images and filenames match, etc...)_
 
 _Read the later sections for more details_
-
+[discrete]
 === Prepare the RISCV FPGA soft-core and bring up FreeBSD on the DE10Pro's ARM HPS system
 
 ```sh
@@ -29,9 +38,9 @@ set currdev=disk0s2:
 include /boot/lua/loader.lua
 # FreeBSD prompt...
 ```
-
+[discrete]
 === Boot FreeBSD on the RISCV soft-core
-
+[discrete]
 ==== first terminal: RISCV gdb stub
 ```sh
 # ARM HPS FreeBSD prompt
@@ -39,7 +48,7 @@ setenv RISCV_GDB_STUB_FMEM_DEV /dev/fmem_sys0_debug_unit
 setenv RISCV_GDB_STUB_PORT 81
 RISCV_gdbstub/src/main
 ```
-
+[discrete]
 ==== second terminal: run `cu` to connect to the RISCV soft-core uart
 ```sh
 # ARM HPS FreeBSD prompt
@@ -49,7 +58,7 @@ cu -l /dev/ttyu0
 # ... RISCV FreeBSD prompt
 
 ```
-
+[discrete]
 ==== third terminal: gdb session to drive the RISCV soft-core
 ```gdb
 # ARM HPS FreeBSD prompt
@@ -66,6 +75,12 @@ continue
 # see output of second terminal
 ```
 
+
+
+// -----------------------------------------------------------------------------
+
+
+
 [discrete]
 = Contents
 
@@ -73,19 +88,33 @@ toc::[]
 
 :sectnums:
 
+
+
+// -----------------------------------------------------------------------------
+
+
+
 = Prepare the SD card
 
-As a first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup,
-we prepare a disk image to put on an SD card.
+On a DE10Pro CHERI-BGAS system, we want a FreeBSD kernel to run on the ARM HPS system, and a CheriBSD kernel for the RISCV FPGA soft-core. As a first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup, we prepare a disk image to put on an SD card.
+We will use https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild] to prepare our environment. Start by cloning cheribuild so you can build the various kernels and disk images to create our setup.
 
-On a DE10Pro CHERI-BGAS system, we want a FreeBSD kernel to run on the ARM HPS system,
-and a CheriBSD kernel for the RISCV FPGA soft-core.
-We will use https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild] to prepare our environment.
-Start by cloning cheribuild so you can build the various kernels and disk images described below. 
+== Preparing the relevant device trees
+
+=== Dervice tree for the ARM HPS 
+
+#TODO#
+
+=== Device tree overlay exposing the soft-core system to the ARM HPS
+
+To allow the ARM HPS system to communicate with the RISCV soft-core on the FPGA, we need to expose the various RISCV debug unit, uart, interrupts... to HPS. To do this, we build a device tree overlay as follows:
+
+#TODO#
 
 == Preparing the RISCV environment
 
-At the time of writing, booting CheriBSD on our RISCV soft-core requires:
+_(At the time of writing)_ Booting CheriBSD on our RISCV soft-core requires:
+
 - a device tree binary for the RISCV soft-core system
 - a build of BBL
 - a build of CheriBSD with an embedded rootfs
@@ -107,89 +136,110 @@ https://github.com/gameboo/DE10Pro-softcore-devicetree.git
 
 == Preparing the ARM HPS environment
 
+_(At the time of writing)_ We want to boot a FreeBSD "host" setup on the ARM HPS system that will drive the RISCV soft-core. On this ARM host system, we will want to have all the necessary files to simply boot FreeBSD correctly, and the necessary tools to properly interact with the soft-core system. Here, we first go through files to be embedded in the final rootfs, and we then use cheribuild to create both the ARM FreeBSD kernel and the disk image with the files of interest.
+
 === Preparing relevant files for the FreeBSD rootfs
-Extra files can be added to the final FreeBSD rootfs by placing them in
-`<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/\*`
-**prior to running the command**. Here, we will want to add a `*.dtbo` device tree
-overlay describing the FPGA hardware exposed to the HPS ARM system (RISCV debug unit, uart, interrupts...)
-and a `/boot/loader.conf.local` configuration file to point to it, to enable the FreeBSD running on the ARM
-HPS to interface with this hardware.
 
-On the FreeBSD rootfs, we need:
+Extra files can be added to the final FreeBSD rootfs by placing them in `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/\*` **prior to running the command which builds the rootfs**.
 
-- a FreeBSD rootfs ;)
-- the RISCV environment from the previous section, i.e.
+In our FreeBSD rootfs, we will want (in addition to all the files already included by the FreeBSD build):
+
+- the RISCV environment we prepared in <<Preparing the RISCV environment>>, i.e.
+
   * Device Tree Binary for the RISCV soft-core system
   * RISCV BBL
   * RISCV CheriBSD kernel with embedded rootfs
-- a loader script `/boot/lua/loader.lua` to be included from the FreeBSD loader
-  when booting FreeBSD
-- to make the ARM HPS system FreeBSD instance able to communicate with the
-  RISCV FPGA soft-core, we need it to detect the uart on the FPGA side. To do
-  this, we need:
-  * a device tree overlay `/boot/fpga-ns16550.dtbo`
+
+- the files necessary to allow the ARM HPS to communicate with the RISCV FPGA soft-core, i.e.
+
+  * a device tree overlay `/boot/fpga-ns16550.dtbo` built in <<Device tree overlay exposing the soft-core system to the ARM HPS>>
   * a loader configuration `/boot/loader.conf.local` containing
     `fdt_overlays="/boot/fpga-ns16550.dtbo"`
-- possibly your ssh keys to help ssh-ing into the ARM HPS system
+    
+- possibly your ssh keys to help ssh-ing into the ARM HPS system (this can be automatically added when building the FreeBSD disk image)
+
 - optionally, in `/etc/rc.conf` add
 ```sh
 ifconfig_<interface name, a.k.a. dwc0>="inet <ip for the ARM HPS system, e.g. 192.168.10.10/24>"
 defaultrouter="<ip of a host machine to act as a router, e.g. 192.168.10.1>"
 ```
+
 - optionally, in `/etc/resolv.conf` add
 ```sh
 nameserver 8.8.8.8
 nameserver 208.67.222.222
 nameserver 208.67.220.220
 ```
-- a clone of https://github.com/bukinr/RISCV_gdbstub.git to enable gdb sessions
-  to the RISCV FPGA soft-core
-- a clone of https://github.com/CTSRD-CHERI/fmem.git to interact with the
-  various fmem devices from the command line
+
+- a clone of https://github.com/bukinr/RISCV_gdbstub.git to enable gdb sessions to the RISCV FPGA soft-core
+
+- a clone of https://github.com/CTSRD-CHERI/fmem.git to interact with the various fmem devices from the command line
+
 - git / vim / gcc / whatever tools...
 
+//- a loader script `/boot/lua/loader.lua` to be included from the FreeBSD loader when booting FreeBSD
 
-=== FreeBSD arm kernel and disk image
-by running:
+=== Build an ARM FreeBSD kernel and disk image
+
+Once the `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/>` folder is prepared as described in <<Preparing relevant files for the FreeBSD rootfs>>, you can run the following command to build a FreeBSD kernel and a disk image:
+
 ```sh
 ./cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64
 ```
 
-Once the cheribuild command is done, a `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img` disk image should be available. This image can be flashed onto an SD card by running (most likely as `root` for access to the SD card device):
+##
+_**Note:** we explicitly use the https://github.com/CTSRD-CHERI/freebsd-morello FreeBSD fork on the stratix10 branch as it contains the fmem driver necessary to expose the AXI memory-mapped device described in the device tree overlay_
+##
+
+Once the command is done, a `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img` disk image should be available. This image can be flashed onto an SD card by running _(most likely as `root` to allow access to the SD card device)_:
 ```sh
-dd if=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img of=<<path to your SD card device, a.k.a. /dev/sdX> bs=4M
+dd if=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img> of=<path to your SD card device, a.k.a. /dev/sdX> bs=4M
 ```
 
-You can then mount the FAT partition from the SD card and copy files to it easily.
+##
+_**Note:** you can mount the FAT partition from the SD card and copy files to it on a linux system easily. The rootfs partition uses UFS which cannot be easily written from a linux system. You will want a FreeBSD system to change files on it._
+##
 
-== FAT partition
-
-To enable later steps, the FAT partition on the SD card should contain:
-
-- the `*.core.rbf` FPGA image to use for the FPGA configuration
-- a u-boot binary image `u-boot.img`
-- the `*.dtb` device tree binary used by the ARM HPS system
-- the `*.efi` bsd loader
-- the (fmem-enabled, with https://github.com/CTSRD-CHERI/freebsd-morello/blob/stratix10/sys/arm64/intel/fmem.c[this] driver) FreeBSD kernel to boot
-
-=== Build and embed a u-boot bootloader, and get an hps and a core slice from a bitfile
+=== Build an ARM u-boot bootloader
 
 You can build u-boot by running https://raw.githubusercontent.com/POETSII/DE10Pro-hps-ubuntu-sdcard-scripts/0f671c7726ab2b65011ed5632b7eb2d96cef9c80/build_uboot.sh[this] script.
-Once the script is finished, relative to where it was ran, there should exist both a
-`./u-boot-socfpga/u-boot.img` u-boot image and a
-`./u-boot-socfpga/spl/u-boot-spl-dtb.ihex` first stage memory image.
+Running the script in `./` generates (amongst others) the following files:
 
-`./u-boot-socfpga/u-boot.img` should be copied to th FAT partition on the SD card.
-The first stage memory image `./u-boot-socfpga/spl/u-boot-spl-dtb.ihex` should be embedded in the startix 10 FPGA configuration.
-### TODO: this assumes a built DE10Pro-cheri-bgas sof file. Add explanations...###
+- a u-boot image `./u-boot-socfpga/u-boot.img`
+- a first stage memory image `./u-boot-socfpga/spl/u-boot-spl-dtb.ihex`
+
+== Finalising the FAT partition
+
+To enable the later steps, the FAT partition on the SD card should contain:
+
+- the `*.core.rbf` FPGA image to use for the FPGA configuration
+- a u-boot binary image `u-boot.img` built in <<Build an ARM u-boot bootloader>>
+- the `*.dtb` device tree binary used by the ARM HPS system (see <<Dervice tree for the ARM HPS>>)
+//- the `*.efi` bsd loader
+//- the (fmem-enabled, with https://github.com/CTSRD-CHERI/freebsd-morello/blob/stratix10/sys/arm64/intel/fmem.c[this] driver) FreeBSD kernel to boot
+
+
+
+// -----------------------------------------------------------------------------
+
+
+
+= Prepare the RISCV FPGA soft-core system
+
+== Embed a u-boot bootloader in the FPGA bitfile, and get an hps and a core slice
+
+The first stage memory image `u-boot-spl-dtb.ihex` built in <<Build an ARM u-boot bootloader>> should be embedded in the startix 10 FPGA configuration.
+
+##
+This assumes a built DE10Pro-cheri-bgas sof file. Add explanations...
+##
+
 ```sh
-BOOTLOADER=<path to u-boot-socfpga>/spl/u-boot-spl-dtb.ihex
+BOOTLOADER=<path to u-boot-spl-dtb.ihex>
 SOF=<path to your stratix 10 *.sof file>
 OUTNAME=socfpga
 quartus_pfg -c $SOF -o hps=ON -o hps_path=$BOOTLOADER $OUTNAME.rbf
 ```
-
-= Prepare the RISCV FPGA soft-core system
 
 == Push the hps rbf slice to the board and get a usb terminal going
 
@@ -218,6 +268,12 @@ usb start
 usb info
 fatload usb ...
 ```
+
+
+
+// -----------------------------------------------------------------------------
+
+
 
 = Boot FreeBSD on the ARM HPS system
 
@@ -256,6 +312,12 @@ To specify the usb drive as the rootfs on FreeBSD boot:
 ```sh
 ufs:diskid/DISK-20090815198100000s2a
 ```
+
+
+
+// -----------------------------------------------------------------------------
+
+
 
 = Get a FreeBSD prompt on the RISCV FPGA soft-core system
 
