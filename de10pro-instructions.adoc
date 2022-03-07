@@ -128,7 +128,7 @@ _(At the time of writing)_ We want to boot a FreeBSD "host" setup on the ARM HPS
 
 === Preparing the relevant device trees
 
-==== Dervice tree for the ARM HPS 
+==== Device tree for the ARM HPS
 
 #TODO#
 
@@ -156,7 +156,7 @@ In our FreeBSD rootfs, we will want (in addition to all the files already includ
   * a device tree overlay `/boot/fpga-cheri-bgas.dtbo` built in <<Device tree overlay exposing the soft-core system to the ARM HPS>>
   * a loader configuration `/boot/loader.conf.local` containing
     `fdt_overlays="/boot/fpga-cheri-bgas.dtbo"`
-    
+
 - possibly your ssh keys to help ssh-ing into the ARM HPS system (this can be automatically added when building the FreeBSD disk image)
 
 - optionally, in `/etc/rc.conf` add

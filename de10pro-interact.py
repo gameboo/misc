@@ -2,7 +2,7 @@
 
 # SPDX-License-Identifier: BSD-2-Clause
 #
-# Copyright (c) 2021 Alexandre Joannou
+# Copyright (c) 2021-2022 Alexandre Joannou
 # All rights reserved.
 #
 # This software was developed by SRI International and the University of
@@ -71,7 +71,7 @@ parser.add_argument ( '--arm-bsd-loader', metavar='ARM_BSD_LOADER'
                     , help="The name of the arm bsd loader to run on the hps arm core. to be found on the boot sdcard / usb device.")
 
 parser.add_argument ( '--arm-bsd-kernel', metavar='ARM_BSD_KERNEL'
-                    , type=str, default='kernel-arm64-s10'
+                    , type=str, default='de10-kernel-fmem'
                     , help="The name of the arm bsd kernel to run on the hps arm core. to be found on the boot sdcard / usb device.")
 
 parser.add_argument( '-v', '--verbosity', metavar='VERB', type=auto_int
@@ -179,17 +179,12 @@ class DE10ProSessionConf:
     if dev == 'usb':
       c.sendline ('usb start')
       c.expect ('.* #')
-      print (c.before)
     c.sendline ('fatload ' + dev + ' 0:1 1000 ' + self.core_rbf)
     c.expect ('.* #')
-    print (c.before)
-    print (c.after)
     c.sendline ('fpga load 0 1000 ${filesize}')
     c.expect ('.* #')
-    print (c.before)
     c.sendline ('bridge enable')
     c.expect ('.* #')
-    print (c.before)
     vprint (1, "=================================================")
 
   def uboot_load_bsd_loader (self):
@@ -198,11 +193,9 @@ class DE10ProSessionConf:
     c.sendline ('fatload ' + dev + ' 0:1 ' + hex (self.arm_bsd_loader_addr)
                                            + ' ' + self.arm_bsd_loader)
     c.expect ('.* #')
-    print (c.before)
     c.sendline ('fatload ' + dev + ' 0:1 ' + hex (self.arm_device_tree_addr)
                                            + ' ' + self.arm_device_tree)
     c.expect ('.* #')
-    print (c.before)
     vprint (1, "=================================================")
 
   def uboot_boot_bsd_loader (self):
@@ -213,8 +206,8 @@ class DE10ProSessionConf:
     #for _ in range(20):
     #  c.sendline()
     #time.sleep (1)
-    c.expect ('OK ')
-    print (c.before)
+    #c.expect ('OK ')
+    time.sleep (5)
     vprint (1, "=================================================")
 
   def bsd_loader_boot_kernel (self):
@@ -261,7 +254,11 @@ if __name__ == "__main__":
              , sess.uboot_boot_bsd_loader
              , sess.bsd_loader_boot_kernel ]
   for step, stepFun in zip (steps, stepFuns):
-    stepFun()
+    try:
+      stepFun()
+    except pexpect.TIMEOUT:
+      vprint (0, f"TIMEOUT in step {step}")
+      break
     if args.to_step == step:
       break
   sess.fallback()
