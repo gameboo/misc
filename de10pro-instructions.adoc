@@ -113,7 +113,7 @@ _(At the time of writing)_ Booting CheriBSD on our RISCV soft-core requires:
 
 === Device Tree Binary for the RISCV soft-core system
 
-Follow the instructions over https://github.com/gameboo/DE10Pro-softcore-devicetree.git[here] to obtain a `devicetree.wrapped.elf`.
+Follow the instructions over https://github.com/CTSRD-CHERI/DE10Pro-softcore-devicetree.git[here] to obtain a `devicetree.wrapped.elf`.
 
 === RISCV BBL
 Run the following cheribuild command:
