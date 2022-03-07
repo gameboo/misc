@@ -6,7 +6,7 @@
 
 = TL;DR
 
-_To boot the CHERI-BGAS system, run the following commands assuming all tools are installed, disk images and filenames match, etc..._
+_Run the following commands to boot a CHERI-BGAS system (assuming all tools are installed, disk images and filenames match, etc...)_
 
 _Read the later sections for more details_
 
@@ -75,22 +75,85 @@ toc::[]
 
 = Prepare the SD card
 
-The first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup
-is to prepare an  SD card with a FAT partition for boot, and a FreeBSD rootfs
-partition to be used by the FreeBSD instance that will run on the ARM HPS system.
+As a first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup,
+we prepare a disk image to put on an SD card.
 
-One can do so using https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild]
-by running:
-```sh
-./cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64
+On a DE10Pro CHERI-BGAS system, we want a FreeBSD kernel to run on the ARM HPS system,
+and a CheriBSD kernel for the RISCV FPGA soft-core.
+We will use https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild] to prepare our environment.
+Start by cloning cheribuild so you can build the various kernels and disk images described below. 
+
+== Preparing the RISCV environment
+
+At the time of writing, booting CheriBSD on our RISCV soft-core requires:
+- a device tree binary for the RISCV soft-core system
+- a build of BBL
+- a build of CheriBSD with an embedded rootfs
+
+=== Device Tree Binary for the RISCV soft-core system
+https://github.com/gameboo/DE10Pro-softcore-devicetree.git
+
+=== RISCV BBL
+```
+./cheribuild.py bbl-gfe-baremetal-riscv64-purecap
 ```
 
+=== RISCV CheriBSD kernel with embedded rootfs
+```
+./cheribuild.py cheribsd-riscv64-purecap
+./cheribuild.py disk-image-mfs-root-riscv64-purecap
+./cheribuild.py --cheribsd-mfs-root-kernel/build-fpga-kernels cheribsd-mfs-root-kernel-riscv64-purecap
+```
+
+== Preparing the ARM HPS environment
+
+=== Preparing relevant files for the FreeBSD rootfs
 Extra files can be added to the final FreeBSD rootfs by placing them in
 `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/extra-files/\*`
 **prior to running the command**. Here, we will want to add a `*.dtbo` device tree
 overlay describing the FPGA hardware exposed to the HPS ARM system (RISCV debug unit, uart, interrupts...)
 and a `/boot/loader.conf.local` configuration file to point to it, to enable the FreeBSD running on the ARM
 HPS to interface with this hardware.
+
+On the FreeBSD rootfs, we need:
+
+- a FreeBSD rootfs ;)
+- the RISCV environment from the previous section, i.e.
+  * Device Tree Binary for the RISCV soft-core system
+  * RISCV BBL
+  * RISCV CheriBSD kernel with embedded rootfs
+- a loader script `/boot/lua/loader.lua` to be included from the FreeBSD loader
+  when booting FreeBSD
+- to make the ARM HPS system FreeBSD instance able to communicate with the
+  RISCV FPGA soft-core, we need it to detect the uart on the FPGA side. To do
+  this, we need:
+  * a device tree overlay `/boot/fpga-ns16550.dtbo`
+  * a loader configuration `/boot/loader.conf.local` containing
+    `fdt_overlays="/boot/fpga-ns16550.dtbo"`
+- possibly your ssh keys to help ssh-ing into the ARM HPS system
+- optionally, in `/etc/rc.conf` add
+```sh
+ifconfig_<interface name, a.k.a. dwc0>="inet <ip for the ARM HPS system, e.g. 192.168.10.10/24>"
+defaultrouter="<ip of a host machine to act as a router, e.g. 192.168.10.1>"
+```
+- optionally, in `/etc/resolv.conf` add
+```sh
+nameserver 8.8.8.8
+nameserver 208.67.222.222
+nameserver 208.67.220.220
+```
+- a clone of https://github.com/bukinr/RISCV_gdbstub.git to enable gdb sessions
+  to the RISCV FPGA soft-core
+- a clone of https://github.com/CTSRD-CHERI/fmem.git to interact with the
+  various fmem devices from the command line
+- git / vim / gcc / whatever tools...
+
+
+=== FreeBSD arm kernel and disk image
+by running:
+```sh
+./cheribuild.py --source-root=<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri> --freebsd/repository=https://github.com/CTSRD-CHERI/freebsd-morello --freebsd/git-revision=stratix10 --freebsd/toolchain=system-llvm freebsd-aarch64 disk-image-freebsd-aarch64
+```
 
 Once the cheribuild command is done, a `<path to your cheri build source root, a.k.a. /home/gameboo/devstuff/cheri>/output/freebsd-aarch64.img` disk image should be available. This image can be flashed onto an SD card by running (most likely as `root` for access to the SD card device):
 ```sh
@@ -125,37 +188,6 @@ SOF=<path to your stratix 10 *.sof file>
 OUTNAME=socfpga
 quartus_pfg -c $SOF -o hps=ON -o hps_path=$BOOTLOADER $OUTNAME.rbf
 ```
-
-== FreeBSD rootfs partition
-
-On the FreeBSD rootfs, we need:
-
-- a FreeBSD rootfs ;)
-- a loader script `/boot/lua/loader.lua` to be included from the FreeBSD loader
-  when booting FreeBSD
-- to make the ARM HPS system FreeBSD instance able to communicate with the
-  RISCV FPGA soft-core, we need it to detect the uart on the FPGA side. To do
-  this, we need:
-  * a device tree overlay `/boot/fpga-ns16550.dtbo`
-  * a loader configuration `/boot/loader.conf.local` containing
-    `fdt_overlays="/boot/fpga-ns16550.dtbo"`
-- possibly your ssh keys to help ssh-ing into the ARM HPS system
-- optionally, in `/etc/rc.conf` add
-```sh
-ifconfig_<interface name, a.k.a. dwc0>="inet <ip for the ARM HPS system, e.g. 192.168.10.10/24>"
-defaultrouter="<ip of a host machine to act as a router, e.g. 192.168.10.1>"
-```
-- optionally, in `/etc/resolv.conf` add
-```sh
-nameserver 8.8.8.8
-nameserver 208.67.222.222
-nameserver 208.67.220.220
-```
-- a clone of https://github.com/bukinr/RISCV_gdbstub.git to enable gdb sessions
-  to the RISCV FPGA soft-core
-- a clone of https://github.com/CTSRD-CHERI/fmem.git to interact with the
-  various fmem devices from the command line
-- git / vim / gcc / whatever tools...
 
 = Prepare the RISCV FPGA soft-core system
 
