@@ -33,8 +33,8 @@ fatload mmc 0:1 0x2000000 efi/boot/bootaa64.efi
 fatload mmc 0:1 0x8000000 socfpga_stratix10_de10_pro2.dtb
 bootefi 0x2000000 0x8000000
 # FreeBSD loader
-load disk0s1:de10-kernel-fmem
 set currdev=disk0s2:
+load /boot/kernel/kernel
 include /boot/lua/loader.lua
 # FreeBSD prompt...
 ```
