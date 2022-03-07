@@ -97,7 +97,11 @@ toc::[]
 = Prepare the SD card
 
 On a DE10Pro CHERI-BGAS system, we want a FreeBSD kernel to run on the ARM HPS system, and a CheriBSD kernel for the RISCV FPGA soft-core. As a first step to booting a software ecosystem on the DE10Pro CHERI-BGAS setup, we prepare a disk image to put on an SD card.
-We will use https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild] to prepare our environment. Start by cloning cheribuild so you can build the various kernels and disk images to create our setup.
+We will use https://github.com/CTSRD-CHERI/cheribuild.git[cheribuild] to prepare our environment. Start by cloning cheribuild and run it with the `llvm` target to prepare the compiler needed for later builds:
+```sh
+./cheribuild.py llvm
+```
+
 
 == Preparing the RISCV environment
 
@@ -108,19 +112,24 @@ _(At the time of writing)_ Booting CheriBSD on our RISCV soft-core requires:
 - a build of CheriBSD with an embedded rootfs
 
 === Device Tree Binary for the RISCV soft-core system
-https://github.com/gameboo/DE10Pro-softcore-devicetree.git
+
+Follow the instructions over https://github.com/gameboo/DE10Pro-softcore-devicetree.git[here] to obtain a `devicetree.wrapped.elf`.
 
 === RISCV BBL
+Run the following cheribuild command:
 ```
 ./cheribuild.py bbl-gfe-baremetal-riscv64-purecap
 ```
+A bbl image is created `cheri/output/sdk/bbl-gfe/riscv64-purecap/bbl`.
 
 === RISCV CheriBSD kernel with embedded rootfs
+Run the following cheribuild commands:
 ```
 ./cheribuild.py cheribsd-riscv64-purecap
 ./cheribuild.py disk-image-mfs-root-riscv64-purecap
 ./cheribuild.py --cheribsd-mfs-root-kernel/build-fpga-kernels cheribsd-mfs-root-kernel-riscv64-purecap
 ```
+A riscv CheriBSD kernel with embedded rootfs is created `cheri/output/kernel-riscv64-purecap.CHERI-PURECAP-GFE`.
 
 == Preparing the ARM HPS environment
 
