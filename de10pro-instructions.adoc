@@ -215,7 +215,7 @@ _**Note:** you can mount the FAT partition from the SD card and copy files to it
 You can build u-boot by running https://raw.githubusercontent.com/POETSII/DE10Pro-hps-ubuntu-sdcard-scripts/0f671c7726ab2b65011ed5632b7eb2d96cef9c80/build_uboot.sh[this] script.
 Running the script in `./` generates (amongst others) the following files:
 
-- a u-boot image `./u-boot-socfpga/u-boot.img`
+- a u-boot image `./u-boot-socfpga/u-boot-dtb.img`
 - a first stage memory image `./u-boot-socfpga/spl/u-boot-spl-dtb.ihex`
 
 == Finalising the FAT partition
@@ -223,7 +223,7 @@ Running the script in `./` generates (amongst others) the following files:
 To enable the later steps, the FAT partition on the SD card should contain:
 
 - the `*.core.rbf` FPGA image to use for the FPGA configuration
-- a u-boot binary image `u-boot.img` built in <<Build an ARM u-boot bootloader>>
+- a u-boot binary image `u-boot-dtb.img` built in <<Build an ARM u-boot bootloader>>
 - the `*.dtb` device tree binary used by the ARM HPS system (see <<Dervice tree for the ARM HPS>>)
 //- the `*.efi` bsd loader
 //- the (fmem-enabled, with https://github.com/CTSRD-CHERI/freebsd-morello/blob/stratix10/sys/arm64/intel/fmem.c[this] driver) FreeBSD kernel to boot
