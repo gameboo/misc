@@ -2,4 +2,7 @@
 things that don't yet have a proper place to live in
 
 image::dark.svg#gh-dark-mode-only[dark logo, width=275]
-image::light.svg#gh-light-mode-only[dark logo, width=275]
+image::light.svg#gh-light-mode-only[light logo, width=275]
+
+image::blarney-logo.svg#gh-light-mode-only[Blarney logo, width=275]
+image::blarney-logo-dark.svg#gh-dark-mode-only[Blarney logo, width=275]
