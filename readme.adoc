@@ -1,4 +1,4 @@
 # misc
 things that don't yet have a proper place to live in
 
-image::dark.svg[dark logo, width=275]
+image::dark.svg#gh-dark-mode-only[dark logo, width=275]
